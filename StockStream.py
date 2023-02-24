@@ -1,6 +1,5 @@
 import streamlit as st
 from streamlit_option_menu import option_menu
-import mplfinance as mpf
 import FoncAnalyse as fa
 
 st.set_page_config(page_title="Stocks Screener",
@@ -8,55 +7,52 @@ st.set_page_config(page_title="Stocks Screener",
                    layout="wide")
 
 
-#---- Sidebar -----
+#---- Sidebar -----#
 
 
 with st.sidebar:
     selected = option_menu(
         menu_title = "Menu principale",
-        options=["Recherche", "Top Actions", "Calendrier Eco"],
+        options=["Recherche", "Top Actions","Top Sous-Coté", "Calendrier Eco"],
     )
+
+#### Recherche Action ####
 
 if selected == "Recherche":
     st.title(f"Chercher une action ici")
     tick = st.text_input(label="Search for stocks", value=fa.top5TradableStocks[0])
 
     try:
-        st.header(tick.upper())
-
-        TDF = fa.tendancesDeF(tick)
-        ATD = fa.Tradable(tick)
-
-        leftColumn, rightColumn = st.columns(2)
-        with leftColumn:
-            st.subheader("Tendence de fond : ")
-            st.subheader(TDF)
-
-        with rightColumn:
-            st.subheader("A Trader en ce moment : ")
-            st.subheader(ATD)
+        fa.main_page(tick)        
     except:
         st.header("Le ticker n'existe pas")
 
+
+#### Top Actions ####
+
 if selected == "Top Actions":
     st.title(f"Les tops actions du jour")
-    st.sidebar.header("Top 5 Stocks")
-    tick = st.sidebar.radio("Pick one",
+    tick = st.sidebar.radio("Top 5 Actions",
                        options=fa.top5TradableStocks)
     
-    st.header(tick.upper())
+    try:
+        fa.main_page(tick)
+    except:
+        st.header("Le ticker n'existe pas")
 
-    TDF = fa.tendancesDeF(tick)
-    ATD = fa.Tradable(tick)
+#### Top Sous Coté ####
 
-    leftColumn, rightColumn = st.columns(2)
-    with leftColumn:
-        st.subheader("Tendence de fond : ")
-        st.subheader(TDF)
+if selected == "Top Sous-Coté":
+    st.title(f"Les tops sous-coté du jour")
+    tick = st.sidebar.radio("Top 5 Sous-coté",
+                       options=fa.top5UnderRateStocks)
+    
+    try:
+        fa.main_page(tick)
+    except:
+        st.header("Le ticker n'existe pas")
 
-    with rightColumn:
-        st.subheader("A Trader en ce moment : ")
-        st.subheader(ATD)
+#### Calendrier économique ####
 
 if selected == "Calendrier Eco":
     st.title(f"Le calendrier économique")

@@ -4,23 +4,30 @@ import pandas as pd
 import requests
 from bs4 import BeautifulSoup
 import numpy as np
+import streamlit as st
+import mplfinance as mpf
+import matplotlib.pyplot as plt
 
-ticker = "AMZN"
+
+
+
 end_date = datetime.now()
-start_date = end_date-timedelta(days=600)
-
-historical_prices = si.get_data(ticker, start_date=start_date, end_date=end_date)
-df = historical_prices
-
-ma80 = df['close'].rolling(80).mean()
+start_date = end_date-timedelta(days=400)
 
 top5TradableStocks = si.get_day_most_active().head()["Symbol"]
+top5UnderRateStocks = si.get_undervalued_large_caps().head()["Symbol"]
 
 
 ###------ Fonction ------###
 
+def prix_historique(ticker):
+    historical_prices = si.get_data(ticker, start_date=start_date, end_date=end_date)
+    return historical_prices
+
 # Donne la tendance de fond
 def tendancesDeF(ticker):
+    historical_prices = si.get_data(ticker, start_date=start_date, end_date=end_date)
+    ma80 = historical_prices['close'].rolling(80).mean()
     if ma80.iloc[-1] > si.get_live_price(ticker):
         return ":arrow_lower_right:"
     else :
@@ -28,7 +35,7 @@ def tendancesDeF(ticker):
 
 # Indique si Oui ou Non il faut trader ce stock en ce moment
 def Tradable(myTicker):
-    for symbol in si.get_day_most_active()["Symbol"]:
+    for symbol in top5TradableStocks:
         if symbol == myTicker.upper():
             return ":white_check_mark:"
     return ":no_entry:"
@@ -93,3 +100,52 @@ def scrapCalEco():
 
     # Afficher le DataFrame
     return df, DateDuCalendrier
+
+
+#--------------------------------------
+
+# Graphe page principale
+
+def graph(historical_prices):
+    st.set_option('deprecation.showPyplotGlobalUse', False)
+    mpf_params = {
+        'type': 'candle', 
+        'mav': 80, 
+        'volume': False, 
+        'figratio': (12,6), 
+        'figscale': 0.75
+    }
+
+    fig = mpf.plot(historical_prices, **mpf_params, tight_layout=True, style='yahoo')
+    return st.pyplot(fig)
+
+# Page Principale
+
+def main_page(tick):
+    tick = tick.upper()
+    st.header(tick)
+
+    st.markdown("----")
+
+    TDF = tendancesDeF(tick)
+    ATD = Tradable(tick)
+
+    leftColumn, rightColumn = st.columns(2)
+    with leftColumn:
+        st.subheader("Tendence de fond : ")
+        st.subheader(TDF)
+
+    with rightColumn:
+        st.subheader("A Trader en ce moment : ")
+        st.subheader(ATD)
+
+    st.markdown("----")
+
+    historical_prices = prix_historique(tick)
+
+    left, right = st.columns(2)
+
+    with right:
+        graph(historical_prices)
+    
+    return None
